@@ -11,9 +11,12 @@ import { BudgetProvider } from "@/lib/budget-context"
 import { ThemeProvider } from "@/lib/theme-context"
 import { AuthProvider, useAuth } from "@/lib/auth-context"
 import { AuthGuard } from "@/components/auth-guard"
+import { useState } from "react";
 
 function SettingsContent() {
-  const { user } = useAuth()
+  const { user, updateProfile } = useAuth();
+  const [name, setName] = useState(user?.name || "");
+  const [email, setEmail] = useState(user?.email || "");
 
   return (
     <BudgetProvider>
@@ -102,11 +105,20 @@ function SettingsContent() {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Full Name</Label>
-                    <Input id="name" defaultValue={user?.name || ""} />
+                    <Input 
+                      id="name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" defaultValue={user?.email || ""} />
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="role">Role</Label>
@@ -120,7 +132,23 @@ function SettingsContent() {
                     <Label htmlFor="department">Department</Label>
                     <Input id="department" defaultValue={user?.department || ""} disabled />
                   </div>
-                  <Button className="w-full">Update Profile</Button>
+                  <Button 
+                    className="w-full"
+                    onClick={async () => {
+                      const result = await updateProfile({
+                        name,
+                        email,
+                      });
+
+                      if (!result.success) {
+                        alert("Error updating profile: " + result.error);
+                      } else {
+                        alert("Profile updated successfully!");
+                      }
+                    }}
+                  >
+                    Update Profile
+                  </Button>
                 </CardContent>
               </Card>
             </div>

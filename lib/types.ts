@@ -10,6 +10,15 @@ export interface Budget {
   category: string
   description: string
   createdAt: string
+} 
+
+export interface User {
+  id: string
+  email: string
+  name: string
+  role: "finance_head" | "hr_admin" | "employee"
+  department: string
+  avatar?: string
 }
 
 export interface Expense {

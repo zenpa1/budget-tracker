@@ -1,188 +1,215 @@
-"use client"
+"use client";
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react"
-import type { Budget, Expense, Anomaly, Notification, FeedbackReport } from "./types"
-import { mockBudgets, mockExpenses, mockAnomalies, mockNotifications, mockFeedbackReports } from "./data"
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { supabase } from "@/lib/supabase";
+import type {
+  Budget,
+  Expense,
+  Anomaly,
+  Notification,
+  FeedbackReport,
+} from "./types";
 
 interface BudgetContextType {
-  budgets: Budget[]
-  expenses: Expense[]
-  anomalies: Anomaly[]
-  notifications: Notification[]
-  feedbackReports: FeedbackReport[]
-  addBudget: (budget: Omit<Budget, "id" | "createdAt" | "spentAmount" | "status">) => void
-  updateBudget: (id: string, updates: Partial<Budget>) => void
-  addExpense: (expense: Omit<Expense, "id">) => void
-  updateAnomalyStatus: (id: string, status: Anomaly["status"]) => void
-  markNotificationRead: (id: string) => void
-  markAllNotificationsRead: () => void
-  getUnreadNotificationsCount: () => number
-  getBudgetExpenses: (budgetId: string) => Expense[]
-  getTotalAllocated: () => number
-  getTotalSpent: () => number
-  getAnomaliesCount: () => number
-  addFeedbackReport: (report: Omit<FeedbackReport, "id" | "submittedAt" | "status" | "trackingCode">) => string
-  updateFeedbackStatus: (id: string, status: FeedbackReport["status"], hrNotes?: string) => void
-  getFeedbackByStatus: (status: FeedbackReport["status"]) => FeedbackReport[]
-  getNewFeedbackCount: () => number
+  budgets: Budget[];
+  expenses: Expense[];
+  anomalies: Anomaly[];
+  notifications: Notification[];
+  feedbackReports: FeedbackReport[];
+  addBudget: (b: Budget) => Promise<void>;
+  addExpense: (e: Expense) => Promise<void>;
+  updateBudget: (id: string, updates: Partial<Budget>) => Promise<void>;
+  updateAnomalyStatus: (id: string, status: string) => Promise<void>;
+  addFeedbackReport: (r: Omit<FeedbackReport, "id" | "submittedAt" | "status" | "trackingCode">) => Promise<string>; // ⭐ ADDED
+  updateFeedbackStatus: (id: string, status: FeedbackReport["status"], hrNotes?: string) => Promise<void>;
+  markNotificationRead: (id: string) => Promise<void>;
+  markAllNotificationsRead: () => Promise<void>;
+  getUnreadNotificationsCount: () => number;
+  getAnomaliesCount: () => number;
+  getNewFeedbackCount: () => number;
+  getBudgetExpenses: (budgetId: string) => Expense[];
+  getTotalAllocated: () => number;
+  getTotalSpent: () => number;
+  getFeedbackByStatus: (status: FeedbackReport["status"]) => FeedbackReport[];
 }
 
-const BudgetContext = createContext<BudgetContextType | undefined>(undefined)
+const BudgetContext = createContext<BudgetContextType | undefined>(undefined);
 
 export function BudgetProvider({ children }: { children: ReactNode }) {
-  const [budgets, setBudgets] = useState<Budget[]>(mockBudgets)
-  const [expenses, setExpenses] = useState<Expense[]>(mockExpenses)
-  const [anomalies, setAnomalies] = useState<Anomaly[]>(mockAnomalies)
-  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications)
-  const [feedbackReports, setFeedbackReports] = useState<FeedbackReport[]>(mockFeedbackReports)
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [anomalies, setAnomalies] = useState<Anomaly[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [feedbackReports, setFeedbackReports] = useState<FeedbackReport[]>([]);
 
-  const addBudget = useCallback((budgetData: Omit<Budget, "id" | "createdAt" | "spentAmount" | "status">) => {
-    const newBudget: Budget = {
-      ...budgetData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString().split("T")[0],
-      spentAmount: 0,
-      status: "active",
-    }
-    setBudgets((prev) => [...prev, newBudget])
-  }, [])
+  // INITIAL LOAD
+  useEffect(() => {
+    loadAllData();
+  }, []);
 
-  const updateBudget = useCallback((id: string, updates: Partial<Budget>) => {
-    setBudgets((prev) => prev.map((budget) => (budget.id === id ? { ...budget, ...updates } : budget)))
-  }, [])
+  async function loadAllData() {
+    const { data: b } = await supabase.from("budgets").select("*");
+    const { data: e } = await supabase.from("expenses").select("*");
+    const { data: a } = await supabase.from("anomalies").select("*");
+    const { data: n } = await supabase.from("notifications").select("*");
+    const { data: f } = await supabase.from("feedbackReports").select("*"); // ⭐ FIXED table name
 
-  const addExpense = useCallback((expenseData: Omit<Expense, "id">) => {
-    const newExpense: Expense = {
-      ...expenseData,
-      id: Date.now().toString(),
-    }
-    setExpenses((prev) => [...prev, newExpense])
-
-    setBudgets((prev) =>
-      prev.map((budget) => {
-        if (budget.id === expenseData.budgetId) {
-          const newSpent = budget.spentAmount + expenseData.amount
-          const newStatus = newSpent > budget.allocatedAmount ? "exceeded" : budget.status
-
-          if (newSpent > budget.allocatedAmount && budget.status !== "exceeded") {
-            const anomaly: Anomaly = {
-              id: Date.now().toString(),
-              budgetId: budget.id,
-              eventName: budget.eventName,
-              team: budget.team,
-              allocatedAmount: budget.allocatedAmount,
-              exceededAmount: newSpent - budget.allocatedAmount,
-              percentageOver: ((newSpent - budget.allocatedAmount) / budget.allocatedAmount) * 100,
-              detectedAt: new Date().toISOString().split("T")[0],
-              status: "pending",
-            }
-            setAnomalies((prev) => [...prev, anomaly])
-
-            const notification: Notification = {
-              id: Date.now().toString(),
-              type: "alert",
-              title: "Budget Exceeded",
-              message: `${budget.eventName} has exceeded its budget`,
-              timestamp: new Date().toISOString(),
-              read: false,
-              budgetId: budget.id,
-            }
-            setNotifications((prev) => [notification, ...prev])
-          }
-
-          return { ...budget, spentAmount: newSpent, status: newStatus }
-        }
-        return budget
-      }),
-    )
-  }, [])
-
-  const updateAnomalyStatus = useCallback((id: string, status: Anomaly["status"]) => {
-    setAnomalies((prev) => prev.map((anomaly) => (anomaly.id === id ? { ...anomaly, status } : anomaly)))
-  }, [])
-
-  const markNotificationRead = useCallback((id: string) => {
-    setNotifications((prev) =>
-      prev.map((notification) => (notification.id === id ? { ...notification, read: true } : notification)),
-    )
-  }, [])
-
-  const markAllNotificationsRead = useCallback(() => {
-    setNotifications((prev) => prev.map((notification) => ({ ...notification, read: true })))
-  }, [])
-
-  const getUnreadNotificationsCount = useCallback(() => {
-    return notifications.filter((n) => !n.read).length
-  }, [notifications])
-
-  const getBudgetExpenses = useCallback(
-    (budgetId: string) => {
-      return expenses.filter((e) => e.budgetId === budgetId)
-    },
-    [expenses],
-  )
-
-  const getTotalAllocated = useCallback(() => {
-    return budgets.reduce((sum, b) => sum + b.allocatedAmount, 0)
-  }, [budgets])
-
-  const getTotalSpent = useCallback(() => {
-    return budgets.reduce((sum, b) => sum + b.spentAmount, 0)
-  }, [budgets])
-
-  const getAnomaliesCount = useCallback(() => {
-    return anomalies.filter((a) => a.status === "pending").length
-  }, [anomalies])
-
-  const generateTrackingCode = () => {
-    const year = new Date().getFullYear()
-    const num = String(feedbackReports.length + 1).padStart(3, "0")
-    return `FB-${year}-${num}`
+    setBudgets(b || []);
+    setExpenses(e || []);
+    setAnomalies(a || []);
+    setNotifications(n || []);
+    setFeedbackReports(f || []);
   }
 
-  const addFeedbackReport = useCallback(
-    (reportData: Omit<FeedbackReport, "id" | "submittedAt" | "status" | "trackingCode">) => {
-      const trackingCode = generateTrackingCode()
-      const newReport: FeedbackReport = {
-        ...reportData,
-        id: Date.now().toString(),
-        submittedAt: new Date().toISOString(),
-        status: "new",
-        trackingCode,
+  // REAL-TIME SUBSCRIPTIONS
+  useEffect(() => {
+    const channel = supabase.channel("all-tables");
+
+    channel
+      .on("postgres_changes", { event: "*", schema: "public", table: "budgets" }, payload => {
+        syncTable(payload, setBudgets);
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "expenses" }, payload => {
+        syncTable(payload, setExpenses);
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "anomalies" }, payload => {
+        syncTable(payload, setAnomalies);
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, payload => {
+        syncTable(payload, setNotifications);
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "feedbackReports" }, payload => { // ⭐ FIXED
+        syncTable(payload, setFeedbackReports);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // REAL-TIME SYNC UTIL
+  function syncTable(payload: any, setter: Function) {
+    setter((prev: any[]) => {
+      if (payload.eventType === "INSERT") {
+        return [...prev, payload.new];
       }
-      setFeedbackReports((prev) => [newReport, ...prev])
-
-      const notification: Notification = {
-        id: Date.now().toString(),
-        type: "alert",
-        title: "New Anonymous Report",
-        message: `A new ${reportData.category.replace("-", " ")} report has been submitted`,
-        timestamp: new Date().toISOString(),
-        read: false,
+      if (payload.eventType === "UPDATE") {
+        return prev.map(i => (i.id === payload.new.id ? payload.new : i));
       }
-      setNotifications((prev) => [notification, ...prev])
+      if (payload.eventType === "DELETE") {
+        return prev.filter(i => i.id !== payload.old.id);
+      }
+      return prev;
+    });
+  }
 
-      return trackingCode
-    },
-    [feedbackReports.length],
-  )
+  // ----------------------------
+  //   ⭐ FEEDBACK: ADDED BACK
+  // ----------------------------
 
-  const updateFeedbackStatus = useCallback((id: string, status: FeedbackReport["status"], hrNotes?: string) => {
-    setFeedbackReports((prev) =>
-      prev.map((report) => (report.id === id ? { ...report, status, hrNotes: hrNotes || report.hrNotes } : report)),
-    )
-  }, [])
+  // Generate tracking code
+  function generateTrackingCode() {
+    const year = new Date().getFullYear();
+    const num = String(feedbackReports.length + 1).padStart(3, "0");
+    return `FB-${year}-${num}`;
+  }
 
-  const getFeedbackByStatus = useCallback(
-    (status: FeedbackReport["status"]) => {
-      return feedbackReports.filter((r) => r.status === status)
-    },
-    [feedbackReports],
-  )
+  // Add a feedback report (SQL version)
+  async function addFeedbackReport(
+    r: Omit<FeedbackReport, "id" | "submittedAt" | "status" | "trackingCode">
+  ): Promise<string> {
+    const trackingCode = generateTrackingCode();
 
-  const getNewFeedbackCount = useCallback(() => {
-    return feedbackReports.filter((r) => r.status === "new").length
-  }, [feedbackReports])
+    const insertData = {
+      ...r,
+      submittedAt: new Date().toISOString(),
+      status: "new",
+      trackingCode,
+    };
+
+    const { error } = await supabase.from("feedbackReports").insert(insertData);
+
+    if (error) {
+      console.error("Failed to insert feedback:", error);
+    }
+
+    // Notification for HR
+    await supabase.from("notifications").insert({
+      type: "info",
+      title: "New Anonymous Report",
+      message: `A new ${r.category.replace("-", " ")} report has been submitted.`,
+      createdAt: new Date().toISOString(),
+      read: false,
+    });
+
+    return trackingCode;
+  }
+
+  // Update feedback status
+  async function updateFeedbackStatus(id: string, status: FeedbackReport["status"], hrNotes?: string) {
+    const updates: any = { status };
+    if (hrNotes !== undefined) updates.hrNotes = hrNotes;
+
+    await supabase.from("feedbackReports").update(updates).eq("id", id);
+  }
+
+  // ----- Helper / Query functions -----
+
+  function getNewFeedbackCount() {
+    return feedbackReports.filter(f => f.status === "new").length;
+  }
+
+  function getFeedbackByStatus(status: FeedbackReport["status"]) {
+    return feedbackReports.filter(f => f.status === status);
+  }
+
+  // -------------------------------------
+
+  // CRUD FUNCTIONS (UNCHANGED)
+  async function addBudget(b: Budget) {
+    await supabase.from("budgets").insert(b);
+  }
+
+  async function addExpense(e: Expense) {
+    await supabase.from("expenses").insert(e);
+  }
+
+  async function updateBudget(id: string, updates: Partial<Budget>) {
+    await supabase.from("budgets").update(updates).eq("id", id);
+  }
+
+  async function updateAnomalyStatus(id: string, status: string) {
+    await supabase.from("anomalies").update({ status }).eq("id", id);
+  }
+
+  async function markNotificationRead(id: string) {
+    await supabase.from("notifications").update({ read: true }).eq("id", id);
+  }
+
+  async function markAllNotificationsRead() {
+    await supabase.from("notifications").update({ read: true }).eq("read", false);
+  }
+
+  function getUnreadNotificationsCount() {
+    return notifications.filter(n => !n.read).length;
+  }
+
+  function getAnomaliesCount() {
+    return anomalies.filter(a => a.status === "pending").length;
+  }
+
+  function getBudgetExpenses(budgetId: string) {
+    return expenses.filter(e => e.budgetId === budgetId || e.budgetId === budgetId);
+  }
+
+  function getTotalAllocated() {
+    return budgets.reduce((s, b) => s + Number(b.allocatedAmount ?? b.allocatedAmount ?? 0), 0);
+  }
+
+  function getTotalSpent() {
+    return budgets.reduce((s, b) => s + Number(b.spentAmount ?? b.spentAmount ?? 0), 0);
+  }
 
   return (
     <BudgetContext.Provider
@@ -193,31 +220,31 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
         notifications,
         feedbackReports,
         addBudget,
-        updateBudget,
         addExpense,
+        updateBudget,
         updateAnomalyStatus,
+        addFeedbackReport, // ⭐ RESTORED
+        updateFeedbackStatus, // ⭐ RESTORED
         markNotificationRead,
         markAllNotificationsRead,
         getUnreadNotificationsCount,
+        getAnomaliesCount,
+        getNewFeedbackCount, // ⭐ RESTORED
         getBudgetExpenses,
         getTotalAllocated,
         getTotalSpent,
-        getAnomaliesCount,
-        addFeedbackReport,
-        updateFeedbackStatus,
-        getFeedbackByStatus,
-        getNewFeedbackCount,
+        getFeedbackByStatus, // ⭐ RESTORED
       }}
     >
       {children}
     </BudgetContext.Provider>
-  )
+  );
 }
 
 export function useBudget() {
-  const context = useContext(BudgetContext)
-  if (context === undefined) {
-    throw new Error("useBudget must be used within a BudgetProvider")
+  const context = useContext(BudgetContext);
+  if (!context) {
+    throw new Error("useBudget must be used within a BudgetProvider");
   }
-  return context
+  return context;
 }
