@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button"
 import { useBudget } from "@/lib/budget-context"
 import { AlertTriangle, CheckCircle, XCircle, Clock, FileText } from "lucide-react"
 import Link from "next/link"
+import { useAuth } from "@/lib/auth-context"
 
 export function AnomalyList() {
   const { anomalies, updateAnomalyStatus } = useBudget()
+  const { user } = useAuth()
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -88,40 +90,56 @@ export function AnomalyList() {
               </div>
             )}
 
-            <div className="mt-4 flex flex-wrap gap-2">
-              {anomaly.status === "pending" && (
-                <>
-                  <Button variant="outline" size="sm" onClick={() => updateAnomalyStatus(anomaly.id, "reviewed")}>
-                    <FileText className="mr-2 h-4 w-4" />
-                    Mark as Reviewed
-                  </Button>
-                  <Button variant="default" size="sm" onClick={() => updateAnomalyStatus(anomaly.id, "approved")}>
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    Approve
-                  </Button>
-                  <Button variant="destructive" size="sm" onClick={() => updateAnomalyStatus(anomaly.id, "rejected")}>
-                    <XCircle className="mr-2 h-4 w-4" />
-                    Reject
-                  </Button>
-                </>
-              )}
-              {anomaly.status === "reviewed" && (
-                <>
-                  <Button variant="default" size="sm" onClick={() => updateAnomalyStatus(anomaly.id, "approved")}>
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    Approve
-                  </Button>
-                  <Button variant="destructive" size="sm" onClick={() => updateAnomalyStatus(anomaly.id, "rejected")}>
-                    <XCircle className="mr-2 h-4 w-4" />
-                    Reject
-                  </Button>
-                </>
-              )}
-              <Link href={`/reports?anomaly=${anomaly.id}`}>
-                <Button variant="outline" size="sm">
-                  Generate Report
-                </Button>
-              </Link>
+            <div className="mt-4">
+              {/* Only Finance Heads can manage statuses and generate reports */}
+              {/* Show controls to finance_head; show informational message to others */}
+              {(() => {
+                if (user?.role === "finance_head") {
+                  return (
+                    <div className="flex flex-wrap gap-2">
+                      {anomaly.status === "pending" && (
+                        <>
+                          <Button variant="outline" size="sm" onClick={() => updateAnomalyStatus(anomaly.id, "reviewed")}>
+                            <FileText className="mr-2 h-4 w-4" />
+                            Mark as Reviewed
+                          </Button>
+                          <Button variant="default" size="sm" onClick={() => updateAnomalyStatus(anomaly.id, "approved")}>
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            Approve
+                          </Button>
+                          <Button variant="destructive" size="sm" onClick={() => updateAnomalyStatus(anomaly.id, "rejected")}>
+                            <XCircle className="mr-2 h-4 w-4" />
+                            Reject
+                          </Button>
+                        </>
+                      )}
+                      {anomaly.status === "reviewed" && (
+                        <>
+                          <Button variant="default" size="sm" onClick={() => updateAnomalyStatus(anomaly.id, "approved")}>
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            Approve
+                          </Button>
+                          <Button variant="destructive" size="sm" onClick={() => updateAnomalyStatus(anomaly.id, "rejected")}>
+                            <XCircle className="mr-2 h-4 w-4" />
+                            Reject
+                          </Button>
+                        </>
+                      )}
+                      <Link href={`/reports?anomaly=${anomaly.id}`}>
+                        <Button variant="outline" size="sm">
+                          Generate Report
+                        </Button>
+                      </Link>
+                    </div>
+                  )
+                }
+
+                return (
+                  <div className="mt-2 rounded-md bg-muted p-3 text-sm text-muted-foreground">
+                    Only Finance Heads can manage anomaly statuses and generate reports.
+                  </div>
+                )
+              })()}
             </div>
           </CardContent>
         </Card>

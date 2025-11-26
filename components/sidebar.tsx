@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useBudget } from "@/lib/budget-context"
+import { useAuth } from "@/lib/auth-context"
 import { LayoutDashboard, Wallet, AlertTriangle, FileText, Bell, Settings, TrendingUp, ShieldAlert } from "lucide-react"
 
 const navigation = [
@@ -16,6 +17,7 @@ const navigation = [
 export function Sidebar() {
   const pathname = usePathname()
   const { getUnreadNotificationsCount, getAnomaliesCount, getNewFeedbackCount } = useBudget()
+  const { user } = useAuth()
   const unreadCount = getUnreadNotificationsCount()
   const anomaliesCount = getAnomaliesCount()
   const newFeedbackCount = getNewFeedbackCount()
@@ -35,7 +37,13 @@ export function Sidebar() {
 
         <nav className="flex-1 space-y-1 px-3 py-4">
           <p className="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Main Menu</p>
-          {navigation.map((item) => {
+          {navigation
+            .filter((item) => {
+              // Only show Reports to Finance Head
+              if (item.name === "Reports" && user?.role !== "finance_head") return false
+              return true
+            })
+            .map((item) => {
             const isActive = pathname === item.href
             const showBadge = item.name === "Anomalies" && anomaliesCount > 0
 
@@ -63,7 +71,7 @@ export function Sidebar() {
 
           <div className="my-4 border-t border-sidebar-border" />
 
-          <p className="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">HR Channel</p>
+          <p className="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Anonymous Reports</p>
           <Link
             href="/hr-channel"
             className={cn(
@@ -75,7 +83,7 @@ export function Sidebar() {
           >
             <ShieldAlert className="h-5 w-5" />
             Anonymous Reports
-            {newFeedbackCount > 0 && (
+            {user?.role === "hr_admin" && newFeedbackCount > 0 && (
               <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-xs text-amber-950">
                 {newFeedbackCount}
               </span>
@@ -116,17 +124,17 @@ export function Sidebar() {
           </Link>
         </nav>
 
-        <div className="border-t border-sidebar-border p-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
-              JD
-            </div>
-            <div>
-              <p className="text-sm font-medium text-sidebar-foreground">Jane Doe</p>
-              <p className="text-xs text-muted-foreground">Finance Head</p>
+          <div className="border-t border-sidebar-border p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                {user?.name ? user.name.charAt(0) : "JD"}
+              </div>
+              <div>
+                <p className="text-sm font-medium text-sidebar-foreground">{user?.name ?? "Jane Doe"}</p>
+                <p className="text-xs text-muted-foreground">{user?.role === "finance_head" ? "Finance Head" : user?.role === "hr_admin" ? "HR Admin" : "Employee"}</p>
+              </div>
             </div>
           </div>
-        </div>
       </div>
     </aside>
   )
