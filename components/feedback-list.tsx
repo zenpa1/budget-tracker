@@ -2,8 +2,9 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useBudget } from "@/lib/budget-context"
+import { supabase } from "@/lib/supabase" // <--- needed for direct DB updates
 import type { FeedbackReport } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -52,11 +53,54 @@ const categoryLabels: Record<FeedbackReport["category"], string> = {
 }
 
 export function FeedbackList() {
-  const { feedbackReports, updateFeedbackStatus } = useBudget()
+  const { feedbackReports } = useBudget()
   const [selectedReport, setSelectedReport] = useState<FeedbackReport | null>(null)
+
+  // Editable fields (local state)
   const [newStatus, setNewStatus] = useState<FeedbackReport["status"]>("new")
   const [hrNotes, setHrNotes] = useState("")
+  const [subject, setSubject] = useState("")
+  const [description, setDescription] = useState("")
+  const [category, setCategory] = useState<FeedbackReport["category"]>("other")
+  const [department, setDepartment] = useState("")
+  const [incidentDate, setIncidentDate] = useState<string | null>(null)
+  const [involvedParties, setInvolvedParties] = useState<string | null>(null)
+  const [severity, setSeverity] = useState<FeedbackReport["severity"]>("low")
+  const [isAnonymous, setIsAnonymous] = useState(true)
+  const [assignedTo, setAssignedTo] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+
   const [activeTab, setActiveTab] = useState("all")
+
+  useEffect(() => {
+    if (selectedReport) {
+      // Initialize editable fields from the selected report
+      setNewStatus(selectedReport.status)
+      setHrNotes(selectedReport.hrNotes ?? "")
+      setSubject(selectedReport.subject ?? "")
+      setDescription(selectedReport.description ?? "")
+      setCategory(selectedReport.category ?? "other")
+      setDepartment(selectedReport.department ?? "")
+      setIncidentDate(selectedReport.incidentDate ?? null)
+      setInvolvedParties(selectedReport.involvedParties ?? null)
+      setSeverity(selectedReport.severity ?? "low")
+      setIsAnonymous(selectedReport.isAnonymous ?? true)
+      setAssignedTo(selectedReport.assignedTo ?? null)
+    } else {
+      // clear
+      setNewStatus("new")
+      setHrNotes("")
+      setSubject("")
+      setDescription("")
+      setCategory("other")
+      setDepartment("")
+      setIncidentDate(null)
+      setInvolvedParties(null)
+      setSeverity("low")
+      setIsAnonymous(true)
+      setAssignedTo(null)
+    }
+  }, [selectedReport])
 
   const filteredReports = feedbackReports.filter((report) => {
     if (activeTab === "all") return true
@@ -67,15 +111,57 @@ export function FeedbackList() {
 
   const openReportDialog = (report: FeedbackReport) => {
     setSelectedReport(report)
-    setNewStatus(report.status)
-    setHrNotes(report.hrNotes || "")
   }
 
-  const handleUpdateStatus = () => {
-    if (selectedReport) {
-      updateFeedbackStatus(selectedReport.id, newStatus, hrNotes)
+  const handleClose = () => {
+    setSelectedReport(null)
+  }
+
+  // Save edits directly to DB (and keep local modal updated)
+  const handleSaveChanges = async () => {
+    if (!selectedReport) return
+    setLoading(true)
+
+    try {
+      const updates: any = {
+        subject,
+        description,
+        category,
+        department,
+        incidentDate: incidentDate ?? null,
+        involvedParties: involvedParties ?? null,
+        severity,
+        isAnonymous,
+        assignedTo: assignedTo ?? null,
+        hrNotes,
+        status: newStatus,
+      }
+
+      // Update SQL
+      const { data, error } = await supabase
+        .from("feedbackReports")
+        .update(updates)
+        .eq("id", selectedReport.id)
+        .select()
+        .single()
+
+      if (error) {
+        console.error("Failed to update feedback report:", error)
+      } else {
+        // ⭐ Optimistic UI update (local modal only)
+        setSelectedReport(data)
+      }
+    } finally {
+      setLoading(false)
+      // Close modal
       setSelectedReport(null)
     }
+}
+
+
+  const handleUpdateStatus = async () => {
+    // keep for backwards compatibility: update only status + hrNotes if called from Save button
+    await handleSaveChanges()
   }
 
   const getStatusCounts = () => ({
@@ -175,7 +261,7 @@ export function FeedbackList() {
                     {statusConfig[selectedReport.status].label}
                   </Badge>
                 </div>
-                <DialogTitle className="text-xl">{selectedReport.subject}</DialogTitle>
+                <DialogTitle className="text-xl">{subject || selectedReport.subject}</DialogTitle>
                 <DialogDescription>
                   <span className="font-mono">{selectedReport.trackingCode}</span> • Submitted on{" "}
                   {format(new Date(selectedReport.submittedAt), "MMMM d, yyyy 'at' h:mm a")}
@@ -186,30 +272,60 @@ export function FeedbackList() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="rounded-lg bg-muted/50 p-3">
                     <p className="text-sm text-muted-foreground">Category</p>
-                    <p className="font-medium">{categoryLabels[selectedReport.category]}</p>
+                    <Select value={category} onValueChange={(v) => setCategory(v as FeedbackReport["category"])}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unfair-promotion">Unfair Promotion</SelectItem>
+                        <SelectItem value="toxic-leadership">Toxic Leadership</SelectItem>
+                        <SelectItem value="harassment">Harassment</SelectItem>
+                        <SelectItem value="discrimination">Discrimination</SelectItem>
+                        <SelectItem value="retaliation">Retaliation</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
+
                   <div className="rounded-lg bg-muted/50 p-3">
                     <p className="text-sm text-muted-foreground">Department</p>
-                    <p className="font-medium">{selectedReport.department}</p>
+                    <input
+                      className="mt-1 w-full rounded-md border px-2 py-1"
+                      value={department}
+                      onChange={(e) => setDepartment(e.target.value)}
+                    />
                   </div>
-                  {selectedReport.incidentDate && (
+
+                  {selectedReport.incidentDate !== undefined && (
                     <div className="rounded-lg bg-muted/50 p-3">
                       <p className="text-sm text-muted-foreground">Incident Date</p>
-                      <p className="font-medium">{format(new Date(selectedReport.incidentDate), "MMMM d, yyyy")}</p>
+                      <input
+                        type="date"
+                        className="mt-1 w-full rounded-md border px-2 py-1"
+                        value={incidentDate ?? ""}
+                        onChange={(e) => setIncidentDate(e.target.value || null)}
+                      />
                     </div>
                   )}
-                  {selectedReport.involvedParties && (
-                    <div className="rounded-lg bg-muted/50 p-3">
-                      <p className="text-sm text-muted-foreground">Involved Parties</p>
-                      <p className="font-medium">{selectedReport.involvedParties}</p>
-                    </div>
-                  )}
+
+                  <div className="rounded-lg bg-muted/50 p-3">
+                    <p className="text-sm text-muted-foreground">Involved Parties</p>
+                    <input
+                      className="mt-1 w-full rounded-md border px-2 py-1"
+                      value={involvedParties ?? ""}
+                      onChange={(e) => setInvolvedParties(e.target.value || null)}
+                    />
+                  </div>
                 </div>
 
                 <div>
                   <p className="mb-2 text-sm font-medium text-muted-foreground">Description</p>
                   <div className="rounded-lg border border-border bg-muted/30 p-4">
-                    <p className="text-sm whitespace-pre-wrap">{selectedReport.description}</p>
+                    <Textarea
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      rows={6}
+                    />
                   </div>
                 </div>
 
@@ -230,6 +346,7 @@ export function FeedbackList() {
                       </SelectContent>
                     </Select>
                   </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="notes">HR Notes (Internal)</Label>
                     <Textarea
@@ -240,14 +357,51 @@ export function FeedbackList() {
                       rows={3}
                     />
                   </div>
+
+                  <div className="flex gap-2 items-center">
+                    <label className="text-sm text-muted-foreground">Is Anonymous?</label>
+                    <input
+                      type="checkbox"
+                      checked={isAnonymous}
+                      onChange={(e) => setIsAnonymous(e.target.checked)}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Severity</p>
+                      <Select value={severity} onValueChange={(v) => setSeverity(v as FeedbackReport["severity"])}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="low">Low</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="high">High</SelectItem>
+                          <SelectItem value="critical">Critical</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <p className="text-sm text-muted-foreground">Assigned To</p>
+                      <input
+                        className="mt-1 w-full rounded-md border px-2 py-1"
+                        value={assignedTo ?? ""}
+                        onChange={(e) => setAssignedTo(e.target.value || null)}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
               <DialogFooter>
-                <Button variant="outline" onClick={() => setSelectedReport(null)}>
+                <Button variant="outline" onClick={handleClose} disabled={loading}>
                   Cancel
                 </Button>
-                <Button onClick={handleUpdateStatus}>Save Changes</Button>
+                <Button onClick={handleSaveChanges} disabled={loading}>
+                  {loading ? "Saving..." : "Save Changes"}
+                </Button>
               </DialogFooter>
             </>
           )}

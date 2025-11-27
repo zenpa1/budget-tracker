@@ -131,7 +131,7 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.from("feedbackReports").insert(insertData);
 
     if (error) {
-      console.error("Failed to insert feedback:", error);
+      console.error("Failed to insert feedback:", JSON.stringify(error, null, 2));
     }
 
     // Notification for HR
@@ -147,12 +147,32 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
   }
 
   // Update feedback status
-  async function updateFeedbackStatus(id: string, status: FeedbackReport["status"], hrNotes?: string) {
+  async function updateFeedbackStatus(
+    id: string,
+    status: FeedbackReport["status"],
+    hrNotes?: string
+  ) {
     const updates: any = { status };
     if (hrNotes !== undefined) updates.hrNotes = hrNotes;
 
-    await supabase.from("feedbackReports").update(updates).eq("id", id);
+    const { data, error } = await supabase
+      .from("feedbackReports")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Failed to update feedback:", error);
+      return;
   }
+
+  // 🚀 Instant local update (no waiting for realtime)
+  setFeedbackReports(prev =>
+    prev.map(r => (r.id === id ? { ...r, ...data } : r))
+  );
+}
+
 
   // ----- Helper / Query functions -----
 
