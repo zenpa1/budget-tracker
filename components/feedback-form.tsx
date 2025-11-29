@@ -25,6 +25,25 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { ShieldCheck, Lock, Copy, Check } from "lucide-react"
 
+// ---------------------------------------------------------
+// 🔧 Define form shape so incidentDate + involvedParties can be null
+// ---------------------------------------------------------
+type FormData = {
+  category:
+    | "unfair-promotion"
+    | "toxic-leadership"
+    | "harassment"
+    | "discrimination"
+    | "retaliation"
+    | "other"
+  department: string
+  severity: "low" | "medium" | "high" | "critical"
+  subject: string
+  description: string
+  incidentDate: string | null     // ⭐ optional & nullable
+  involvedParties: string | null  // ⭐ optional & nullable
+}
+
 const categories = [
   { value: "unfair-promotion", label: "Unfair Promotion Practices" },
   { value: "toxic-leadership", label: "Toxic Leadership Behavior" },
@@ -50,25 +69,22 @@ export function FeedbackForm() {
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState("")
 
-  const [formData, setFormData] = useState({
-    category: "" as
-      | "unfair-promotion"
-      | "toxic-leadership"
-      | "harassment"
-      | "discrimination"
-      | "retaliation"
-      | "other",
+  // ---------------------------------------------------------
+  // 🟢 Typed clean state (no more "" for optional fields)
+  // ---------------------------------------------------------
+  const [formData, setFormData] = useState<FormData>({
+    category: "" as FormData["category"],
     department: "",
-    severity: "" as "low" | "medium" | "high" | "critical",
+    severity: "" as FormData["severity"],
     subject: "",
     description: "",
-    incidentDate: "",
-    involvedParties: "",
+    incidentDate: null,
+    involvedParties: null,
   })
 
-  // -----------------------------
-  // 🟢 FIXED: Await database insert
-  // -----------------------------
+  // ---------------------------------------------------------
+  // 🟩 Submit
+  // ---------------------------------------------------------
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -77,6 +93,8 @@ export function FeedbackForm() {
     try {
       const code = await addFeedbackReport({
         ...formData,
+        incidentDate: formData.incidentDate || null,
+        involvedParties: formData.involvedParties || null,
         isAnonymous: true,
       })
 
@@ -100,25 +118,19 @@ export function FeedbackForm() {
     setSubmitted(false)
     setTrackingCode("")
     setFormData({
-      category: "" as
-        | "unfair-promotion"
-        | "toxic-leadership"
-        | "harassment"
-        | "discrimination"
-        | "retaliation"
-        | "other",
+      category: "" as FormData["category"],
       department: "",
-      severity: "" as "low" | "medium" | "high" | "critical",
+      severity: "" as FormData["severity"],
       subject: "",
       description: "",
-      incidentDate: "",
-      involvedParties: "",
+      incidentDate: null,
+      involvedParties: null,
     })
   }
 
-  // -----------------------------
+  // ---------------------------------------------------------
   // SUCCESS SCREEN
-  // -----------------------------
+  // ---------------------------------------------------------
   if (submitted) {
     return (
       <Card className="border-green-500/20 bg-green-500/5">
@@ -126,12 +138,8 @@ export function FeedbackForm() {
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-500/10">
             <ShieldCheck className="h-8 w-8 text-green-500" />
           </div>
-          <CardTitle className="text-green-500">
-            Report Submitted Successfully
-          </CardTitle>
-          <CardDescription>
-            Your anonymous report has been securely submitted to HR
-          </CardDescription>
+          <CardTitle className="text-green-500">Report Submitted Successfully</CardTitle>
+          <CardDescription>Your anonymous report has been securely submitted to HR</CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-4">
@@ -145,16 +153,11 @@ export function FeedbackForm() {
                   {trackingCode}
                 </code>
                 <Button variant="outline" size="sm" onClick={copyTrackingCode}>
-                  {copied ? (
-                    <Check className="h-4 w-4" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
+                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 </Button>
               </div>
               <p className="mt-2 text-sm text-muted-foreground">
                 Save this code to check the status of your report anonymously.
-                This is the only way to track your submission.
               </p>
             </AlertDescription>
           </Alert>
@@ -167,9 +170,9 @@ export function FeedbackForm() {
     )
   }
 
-  // -----------------------------
+  // ---------------------------------------------------------
   // FORM SCREEN
-  // -----------------------------
+  // ---------------------------------------------------------
   return (
     <Card>
       <CardHeader>
@@ -178,8 +181,7 @@ export function FeedbackForm() {
           Submit Anonymous Report
         </CardTitle>
         <CardDescription>
-          Your identity is protected. Reports are reviewed directly by HR without
-          revealing any personal information.
+          Your identity is protected. HR will never see your personal details.
         </CardDescription>
       </CardHeader>
 
@@ -192,18 +194,20 @@ export function FeedbackForm() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
+
           {/* Category + Department */}
           <div className="grid gap-4 sm:grid-cols-2">
+            {/* Category */}
             <div className="space-y-2">
-              <Label htmlFor="category">Category *</Label>
+              <Label>Category *</Label>
               <Select
                 value={formData.category}
                 onValueChange={(value) =>
-                  setFormData({ ...formData, category: value as any })
+                  setFormData({ ...formData, category: value as FormData["category"] })
                 }
                 required
               >
-                <SelectTrigger id="category">
+                <SelectTrigger>
                   <SelectValue placeholder="Select concern type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -216,22 +220,21 @@ export function FeedbackForm() {
               </Select>
             </div>
 
+            {/* Department */}
             <div className="space-y-2">
-              <Label htmlFor="department">Department *</Label>
+              <Label>Department *</Label>
               <Select
                 value={formData.department}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, department: value })
-                }
+                onValueChange={(value) => setFormData({ ...formData, department: value })}
                 required
               >
-                <SelectTrigger id="department">
+                <SelectTrigger>
                   <SelectValue placeholder="Select department" />
                 </SelectTrigger>
                 <SelectContent>
-                  {departments.map((dept) => (
-                    <SelectItem key={dept} value={dept}>
-                      {dept}
+                  {departments.map((d) => (
+                    <SelectItem key={d} value={d}>
+                      {d}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -241,36 +244,40 @@ export function FeedbackForm() {
 
           {/* Severity + Date */}
           <div className="grid gap-4 sm:grid-cols-2">
+            {/* Severity */}
             <div className="space-y-2">
-              <Label htmlFor="severity">Severity Level *</Label>
+              <Label>Severity *</Label>
               <Select
                 value={formData.severity}
                 onValueChange={(value) =>
-                  setFormData({ ...formData, severity: value as any })
+                  setFormData({ ...formData, severity: value as FormData["severity"] })
                 }
                 required
               >
-                <SelectTrigger id="severity">
+                <SelectTrigger>
                   <SelectValue placeholder="Select severity" />
                 </SelectTrigger>
                 <SelectContent>
-                  {severityLevels.map((level) => (
-                    <SelectItem key={level.value} value={level.value}>
-                      {level.label}
+                  {severityLevels.map((lvl) => (
+                    <SelectItem key={lvl.value} value={lvl.value}>
+                      {lvl.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
+            {/* Incident Date (optional) */}
             <div className="space-y-2">
-              <Label htmlFor="incidentDate">Incident Date (Optional)</Label>
+              <Label>Incident Date (Optional)</Label>
               <Input
-                id="incidentDate"
                 type="date"
-                value={formData.incidentDate}
+                value={formData.incidentDate ?? ""}
                 onChange={(e) =>
-                  setFormData({ ...formData, incidentDate: e.target.value })
+                  setFormData({
+                    ...formData,
+                    incidentDate: e.target.value ? e.target.value : null,
+                  })
                 }
               />
             </div>
@@ -278,43 +285,36 @@ export function FeedbackForm() {
 
           {/* Subject */}
           <div className="space-y-2">
-            <Label htmlFor="subject">Subject *</Label>
+            <Label>Subject *</Label>
             <Input
-              id="subject"
               value={formData.subject}
-              onChange={(e) =>
-                setFormData({ ...formData, subject: e.target.value })
-              }
-              placeholder="Brief summary of the concern"
+              onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
               required
             />
           </div>
 
           {/* Description */}
           <div className="space-y-2">
-            <Label htmlFor="description">Detailed Description *</Label>
+            <Label>Detailed Description *</Label>
             <Textarea
-              id="description"
               rows={6}
               value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-              placeholder="Please provide as much detail as possible..."
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               required
             />
           </div>
 
           {/* Involved Parties */}
           <div className="space-y-2">
-            <Label htmlFor="involvedParties">Involved Parties (Optional)</Label>
+            <Label>Involved Parties (Optional)</Label>
             <Input
-              id="involvedParties"
-              value={formData.involvedParties}
+              value={formData.involvedParties ?? ""}
               onChange={(e) =>
-                setFormData({ ...formData, involvedParties: e.target.value })
+                setFormData({
+                  ...formData,
+                  involvedParties: e.target.value ? e.target.value : null,
+                })
               }
-              placeholder="Roles or departments involved (no names needed)"
             />
           </div>
 
@@ -322,10 +322,7 @@ export function FeedbackForm() {
           <Alert>
             <ShieldCheck className="h-4 w-4" />
             <AlertTitle>Your Privacy is Protected</AlertTitle>
-            <AlertDescription>
-              This report is completely anonymous. No identifying information is
-              collected.
-            </AlertDescription>
+            <AlertDescription>No identifying information is ever collected.</AlertDescription>
           </Alert>
 
           <Button type="submit" className="w-full" size="lg" disabled={loading}>

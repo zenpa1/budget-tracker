@@ -1,9 +1,8 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
-import { useBudget } from "@/lib/budget-context"
+import { supabase } from "@/lib/supabase"              // ⭐ REQUIRED
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -51,25 +50,37 @@ const statusConfig: Record<
 }
 
 export function FeedbackStatusChecker() {
-  const { feedbackReports } = useBudget()
   const [trackingCode, setTrackingCode] = useState("")
   const [foundReport, setFoundReport] = useState<FeedbackReport | null>(null)
   const [error, setError] = useState("")
   const [searched, setSearched] = useState(false)
+  const [loading, setLoading] = useState(false)
 
-  const handleSearch = (e: React.FormEvent) => {
+  // 🔍 Search directly in the database
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     setSearched(true)
+    setLoading(true)
 
-    const report = feedbackReports.find((r) => r.trackingCode.toLowerCase() === trackingCode.trim().toLowerCase())
+    const normalized = trackingCode.trim().toLowerCase()
 
-    if (report) {
-      setFoundReport(report)
-    } else {
+    const { data, error: dbError } = await supabase
+      .from("feedbackReports")
+      .select("*")
+      .ilike("trackingCode", normalized)   // ⭐ case-insensitive search
+      .limit(1)
+      .single()
+
+    setLoading(false)
+
+    if (dbError || !data) {
       setFoundReport(null)
       setError("No report found with this tracking code. Please check and try again.")
+      return
     }
+
+    setFoundReport(data as FeedbackReport)
   }
 
   const resetSearch = () => {
@@ -86,8 +97,11 @@ export function FeedbackStatusChecker() {
           <Search className="h-5 w-5 text-primary" />
           Check Report Status
         </CardTitle>
-        <CardDescription>Enter your tracking code to anonymously check the status of your report</CardDescription>
+        <CardDescription>
+          Enter your tracking code to anonymously check the status of your report
+        </CardDescription>
       </CardHeader>
+
       <CardContent>
         <form onSubmit={handleSearch} className="space-y-4">
           <div className="space-y-2">
@@ -100,7 +114,9 @@ export function FeedbackStatusChecker() {
                 onChange={(e) => setTrackingCode(e.target.value)}
                 className="font-mono"
               />
-              <Button type="submit">Search</Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? "Searching..." : "Search"}
+              </Button>
             </div>
           </div>
         </form>
@@ -125,11 +141,14 @@ export function FeedbackStatusChecker() {
             <div className="rounded-lg border border-border p-4 space-y-4">
               <div className="flex items-start justify-between">
                 <div>
-                  <code className="text-sm bg-muted px-2 py-1 rounded">{foundReport.trackingCode}</code>
+                  <code className="text-sm bg-muted px-2 py-1 rounded">
+                    {foundReport.trackingCode}
+                  </code>
                   <p className="mt-2 text-sm text-muted-foreground">
                     Submitted on {format(new Date(foundReport.submittedAt), "MMMM d, yyyy")}
                   </p>
                 </div>
+
                 <Badge variant="outline" className={statusConfig[foundReport.status].color}>
                   {statusConfig[foundReport.status].label}
                 </Badge>
@@ -142,7 +161,9 @@ export function FeedbackStatusChecker() {
                 })()}
                 <div>
                   <p className="font-medium">{statusConfig[foundReport.status].label}</p>
-                  <p className="text-sm text-muted-foreground">{statusConfig[foundReport.status].description}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {statusConfig[foundReport.status].description}
+                  </p>
                 </div>
               </div>
 
@@ -158,8 +179,8 @@ export function FeedbackStatusChecker() {
 
             <Alert>
               <AlertDescription>
-                For your privacy, we only display limited information. HR will address your concern according to company
-                policy.
+                For your privacy, we only display limited information.  
+                HR will address your concern according to company policy.
               </AlertDescription>
             </Alert>
           </div>

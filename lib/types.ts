@@ -62,8 +62,8 @@ export interface FeedbackReport {
   severity: "low" | "medium" | "high" | "critical"
   subject: string
   description: string
-  incidentDate?: string
-  involvedParties?: string
+  incidentDate?: string | null
+  involvedParties?: string | null
   submittedAt: string
   status: "new" | "under-review" | "investigating" | "resolved" | "closed"
   hrNotes?: string
