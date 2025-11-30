@@ -16,7 +16,7 @@ export default function AnomaliesPage() {
           <BudgetProvider>
             <div className="min-h-screen bg-background">
               <Sidebar />
-              <main className="pl-64">
+              <main className="md:pl-64">
                 <Header title="Budget Anomalies" description="Review and manage budget exceedances" />
                 <div className="p-6">
                   <AnomalyList />

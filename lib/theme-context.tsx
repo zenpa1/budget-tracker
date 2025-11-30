@@ -8,6 +8,7 @@ interface ThemeContextType {
   theme: Theme
   toggleTheme: () => void
   setTheme: (theme: Theme) => void
+  logoSrc: string
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
@@ -36,12 +37,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setTheme(newTheme)
   }
 
+  const logoSrc = theme === "dark" ? "/logos/logo-dark.svg" : "/logos/logo-light.svg"
+
   // Prevent flash of wrong theme
   if (!mounted) {
     return null
   }
 
-  return <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>{children}</ThemeContext.Provider>
+  return <ThemeContext.Provider value={{ theme, toggleTheme, setTheme, logoSrc }}>{children}</ThemeContext.Provider>
 }
 
 export function useTheme() {

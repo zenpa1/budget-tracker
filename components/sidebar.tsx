@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import { useBudget } from "@/lib/budget-context"
 import { useAuth } from "@/lib/auth-context"
 import { LayoutDashboard, Wallet, AlertTriangle, FileText, Bell, Settings, TrendingUp, ShieldAlert } from "lucide-react"
+import { Logo } from "@/components/logo"
 
 const navigation = [
   { name: "Overview", href: "/", icon: LayoutDashboard },
@@ -23,16 +24,10 @@ export function Sidebar() {
   const newFeedbackCount = getNewFeedbackCount()
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-border bg-sidebar">
+    <aside className="hidden md:fixed md:left-0 md:top-0 md:z-40 md:h-screen md:w-64 md:border-r md:border-border md:bg-sidebar md:block">
       <div className="flex h-full flex-col">
-        <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-6">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-            <TrendingUp className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <div>
-            <h1 className="text-lg font-semibold text-sidebar-foreground">BudgetTrack</h1>
-            <p className="text-xs text-muted-foreground">Finance Dashboard</p>
-          </div>
+        <div className="flex h-16 items-center justify-center border-b border-sidebar-border px-6">
+          <Logo height={32} width={140} />
         </div>
 
         <nav className="flex-1 space-y-1 px-3 py-4">

@@ -20,7 +20,7 @@ export default function DashboardPage() {
           <BudgetProvider>
             <div className="min-h-screen bg-background">
               <Sidebar />
-              <main className="pl-64">
+              <main className="md:pl-64">
                 <Header title="Dashboard Overview" description="Monitor your company's budget performance" />
                 <div className="p-6">
                   <StatsCards />

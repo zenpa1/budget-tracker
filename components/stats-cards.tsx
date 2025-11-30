@@ -3,9 +3,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useBudget } from "@/lib/budget-context"
 import { DollarSign, TrendingUp, TrendingDown, AlertTriangle } from "lucide-react"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export function StatsCards() {
-  const { getTotalAllocated, getTotalSpent, getAnomaliesCount, budgets } = useBudget()
+  const { getTotalAllocated, getTotalSpent, getAnomaliesCount, budgets, loading } = useBudget()
 
   const totalAllocated = getTotalAllocated()
   const totalSpent = getTotalSpent()
@@ -53,8 +55,16 @@ export function StatsCards() {
             <stat.icon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">{stat.value}</div>
-            <p className={`text-xs ${stat.trend === "up" ? "text-success" : "text-destructive"}`}>{stat.change}</p>
+            <div className="flex items-center justify-between">
+              <div className="text-2xl font-bold text-foreground">
+                {loading ? <Skeleton className="inline-block h-6 w-24" /> : stat.value}
+              </div>
+              {loading ? (
+                <Skeleton className={`inline-block h-4 w-32 ${stat.trend === "up" ? "" : ""}`} />
+              ) : (
+                <p className={`text-xs ${stat.trend === "up" ? "text-success" : "text-destructive"}`}>{stat.change}</p>
+              )}
+            </div>
           </CardContent>
         </Card>
       ))}
