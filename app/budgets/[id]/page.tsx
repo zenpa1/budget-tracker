@@ -5,7 +5,7 @@ import { Sidebar } from "@/components/sidebar"
 import { Header } from "@/components/header"
 import { BudgetProvider, useBudget } from "@/lib/budget-context"
 import { ThemeProvider } from "@/lib/theme-context"
-import { AuthProvider } from "@/lib/auth-context"
+import { AuthProvider, useAuth } from "@/lib/auth-context"
 import { AuthGuard } from "@/components/auth-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -13,15 +13,28 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { ArrowLeft, Calendar, DollarSign, TrendingUp, Users } from "lucide-react"
 import Link from "next/link"
+import { ExpenseForm } from "@/components/expense-form"
 
 function BudgetDetailsContent() {
   const params = useParams()
   const router = useRouter()
   const budgetId = params.id as string
   const { budgets, getBudgetExpenses } = useBudget()
+  const { user } = useAuth()
+  const isFinance = user?.role === "finance_head"
 
   const budget = budgets.find((b) => b.id === budgetId)
   const expenses = getBudgetExpenses(budgetId)
+
+  // Show loading screen while data is fetching to avoid brief "not found" flicker
+  // We rely on budgets array length as a proxy; alternatively, expose loading from context
+  if (!budget && budgets.length === 0) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    )
+  }
 
   if (!budget) {
     return (
@@ -187,10 +200,15 @@ function BudgetDetailsContent() {
           {/* Expenses List */}
           <Card>
             <CardHeader>
-              <CardTitle>Expenses</CardTitle>
-              <CardDescription>
-                {expenses.length} expense{expenses.length !== 1 ? "s" : ""} recorded for this budget
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Expenses</CardTitle>
+                  <CardDescription>
+                    {expenses.length} expense{expenses.length !== 1 ? "s" : ""} recorded for this budget
+                  </CardDescription>
+                </div>
+                {isFinance && <ExpenseForm budgetId={budgetId} />}
+              </div>
             </CardHeader>
             <CardContent>
               {expenses.length === 0 ? (
@@ -205,7 +223,7 @@ function BudgetDetailsContent() {
                       <div>
                         <p className="font-medium text-foreground">{expense.description}</p>
                         <p className="text-sm text-muted-foreground">
-                          {expense.vendor} • {expense.date}
+                          {expense.date}
                         </p>
                       </div>
                       <div className="text-right">

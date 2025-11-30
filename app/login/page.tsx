@@ -8,27 +8,18 @@ import { ThemeProvider } from "@/lib/theme-context"
 import { AuthProvider } from "@/lib/auth-context"
 
 function LoginPageContent() {
-  const { isAuthenticated, isLoading } = useAuth()
+  const { isAuthenticated } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
+    if (isAuthenticated) {
       router.push("/")
     }
-  }, [isAuthenticated, isLoading, router])
+  }, [isAuthenticated, router])
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    )
-  }
+  if (isAuthenticated) return null
 
-  if (isAuthenticated) {
-    return null
-  }
-
+  // Keep form mounted during loading so error state persists
   return <LoginForm />
 }
 

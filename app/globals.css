@@ -136,3 +136,45 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Smooth theme transition (activated after mount via .theme-transition-enabled) */
+html.theme-transition-enabled, html.theme-transition-enabled body {
+  transition: background-color 220ms cubic-bezier(.4,0,.2,1),
+    color 220ms cubic-bezier(.4,0,.2,1),
+    border-color 220ms cubic-bezier(.4,0,.2,1);
+}
+
+/* Key surface transitions (cards, sidebar, popovers) without flooding all elements */
+html.theme-transition-enabled .card,
+html.theme-transition-enabled .sidebar,
+html.theme-transition-enabled .popover,
+html.theme-transition-enabled .bg-background,
+html.theme-transition-enabled .bg-card,
+html.theme-transition-enabled .bg-popover {
+  transition: background-color 220ms cubic-bezier(.4,0,.2,1),
+    color 220ms cubic-bezier(.4,0,.2,1),
+    border-color 220ms cubic-bezier(.4,0,.2,1);
+}
+
+/* Overlay fade used during theme toggle */
+/* Softer overlay fade */
+.theme-fade-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background: var(--background);
+  animation: theme-fade 240ms cubic-bezier(.4,0,.2,1) forwards;
+}
+
+@keyframes theme-fade {
+  0% { opacity: 0.4; }
+  100% { opacity: 0; }
+}
+
+/* Reduce motion respect */
+@media (prefers-reduced-motion: reduce) {
+  html.theme-transition-enabled, html.theme-transition-enabled body {
+    transition: none;
+  }
+}
