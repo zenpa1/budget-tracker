@@ -1,31 +1,31 @@
 # verity
 
-A comprehensive corporate budget tracking and management dashboard built for finance departments. [cite_start]This application enables Finance Heads to manage event budgets, detect spending anomalies, generate reports for executive review, and includes an anonymous HR feedback channel for workplace concerns[cite: 1, 2].
+A comprehensive corporate budget tracking and management dashboard built for finance departments. This application enables Finance Heads to manage event budgets, detect spending anomalies, generate reports for executive review, and includes an anonymous HR feedback channel for workplace concerns.
 
 ## 🚀 Features
 
 ### Core Functionality
-* [cite_start]**Role-Based Access Control:** Distinct dashboards and permissions for Finance Heads, HR Admins, and Employees[cite: 3].
-* [cite_start]**Budget Management:** Create, edit, and track budgets for various teams (Marketing, Engineering, HR, etc.) with visual progress indicators[cite: 5, 6].
-* [cite_start]**Anomaly Detection:** Automated flagging of budgets that exceed their allocated amounts with approval/rejection workflows[cite: 7].
-* [cite_start]**Real-time Dashboard:** Visualizations for spending trends, category distribution, and team comparisons using interactive charts[cite: 5].
-* [cite_start]**PDF Reporting:** Generate downloadable reports for budget anomalies and executive reviews[cite: 8].
+* **Role-Based Access Control:** Distinct dashboards and permissions for Finance Heads, HR Admins, and Employees[cite: 3].
+* **Budget Management:** Create, edit, and track budgets for various teams (Marketing, Engineering, HR, etc.) with visual progress indicators[cite: 5, 6].
+* **Anomaly Detection:** Automated flagging of budgets that exceed their allocated amounts with approval/rejection workflows[cite: 7].
+* **Real-time Dashboard:** Visualizations for spending trends, category distribution, and team comparisons using interactive charts[cite: 5].
+* **PDF Reporting:** Generate downloadable reports for budget anomalies and executive reviews[cite: 8].
 
 ### HR Channel
-* [cite_start]**Anonymous Reporting:** Secure, confidential submission form for workplace concerns (Harassment, Toxic Leadership, etc.)[cite: 9].
-* [cite_start]**Tracking System:** Users receive a unique tracking code (e.g., `FB-2025-001`) to check the status of their report without revealing their identity[cite: 9, 10].
-* [cite_start]**HR Dashboard:** Dedicated view for HR Admins to manage, investigate, and resolve employee reports[cite: 4, 10].
+* **Anonymous Reporting:** Secure, confidential submission form for workplace concerns (Harassment, Toxic Leadership, etc.)[cite: 9].
+* **Tracking System:** Users receive a unique tracking code (e.g., `FB-2025-001`) to check the status of their report without revealing their identity[cite: 9, 10].
+* **HR Dashboard:** Dedicated view for HR Admins to manage, investigate, and resolve employee reports[cite: 4, 10].
 
 ## 🛠️ Technology Stack
 
-* [cite_start]**Framework:** [Next.js 16](https://nextjs.org/) (App Router)[cite: 21].
-* [cite_start]**Language:** TypeScript[cite: 22].
-* [cite_start]**Styling:** [Tailwind CSS v4](https://tailwindcss.com/) with CSS variables[cite: 21].
-* [cite_start]**UI Components:** [shadcn/ui](https://ui.shadcn.com/) (Radix UI primitives)[cite: 21].
-* [cite_start]**Charts:** Recharts[cite: 27].
-* [cite_start]**Backend & Database:** [Supabase](https://supabase.com/) (PostgreSQL, Realtime)[cite: 25].
-* [cite_start]**State Management:** React Context API[cite: 21].
-* [cite_start]**Icons:** Lucide React[cite: 22].
+* **Framework:** [Next.js 16](https://nextjs.org/) (App Router)[cite: 21].
+* **Language:** TypeScript[cite: 22].
+* **Styling:** [Tailwind CSS v4](https://tailwindcss.com/) with CSS variables[cite: 21].
+* **UI Components:** [shadcn/ui](https://ui.shadcn.com/) (Radix UI primitives)[cite: 21].
+* **Charts:** Recharts[cite: 27].
+* **Backend & Database:** [Supabase](https://supabase.com/) (PostgreSQL, Realtime)[cite: 25].
+* **State Management:** React Context API[cite: 21].
+* **Icons:** Lucide React[cite: 22].
 
 ## 📋 Prerequisites
 
@@ -48,14 +48,14 @@ A comprehensive corporate budget tracking and management dashboard built for fin
     ```
 
 3.  **Environment Configuration**
-    [cite_start]Create a `.env.local` file in the root directory and add your Supabase credentials[cite: 940]:
+    Create a `.env.local` file in the root directory and add your Supabase credentials:
     ```env
     NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
     NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
     ```
 
 4.  **Database Setup**
-    [cite_start]Run the following SQL in your Supabase SQL Editor to create the necessary tables based on the data models[cite: 13, 14, 15, 17, 19, 20]:
+    Run the following SQL in your Supabase SQL Editor to create the necessary tables based on the data models:
 
     ```sql
     -- Users Table
@@ -147,7 +147,7 @@ A comprehensive corporate budget tracking and management dashboard built for fin
 
 ## 🔐 Demo Credentials
 
-[cite_start]The application comes with a login form configured for specific roles[cite: 380, 381]:
+The application comes with a login form configured for specific roles:
 
 | Role | Email | Password | Access Level |
 | :--- | :--- | :--- | :--- |
@@ -158,18 +158,18 @@ A comprehensive corporate budget tracking and management dashboard built for fin
 ## 📂 Project Structure
 
 * `app/` - Next.js App Router pages and layouts.
-    * [cite_start]`budgets/` - Budget list and creation[cite: 62].
-    * [cite_start]`anomalies/` - Anomaly detection view[cite: 60].
-    * [cite_start]`hr-channel/` - Anonymous reporting and HR dashboard[cite: 66].
-    * [cite_start]`reports/` - Report generation tools[cite: 104].
+    * `budgets/` - Budget list and creation.
+    * `anomalies/` - Anomaly detection view.
+    * `hr-channel/` - Anonymous reporting and HR dashboard.
+    * `reports/` - Report generation tools.
 * `components/` - Reusable UI components (shadcn/ui) and feature-specific widgets.
 * `lib/` - Utilities, types, and context providers.
-    * [cite_start]`budget-context.tsx` - Main global state and data fetching[cite: 873].
-    * [cite_start]`supabase.ts` - Database client configuration[cite: 940].
+    * `budget-context.tsx` - Main global state and data fetching.
+    * `supabase.ts` - Database client configuration.
 
 ## 🎨 Theme System
 
-The application supports both Light and Dark modes, utilizing `oklch` color spaces for vibrant and accessible interfaces. [cite_start]Theme preference is persisted locally[cite: 11, 30].
+The application supports both Light and Dark modes, utilizing `oklch` color spaces for vibrant and accessible interfaces. Theme preference is persisted locally.
 
 ## 📄 License
 
