@@ -44,12 +44,24 @@ export function CategoryChart() {
                   </Pie>
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "#1f2937",
-                      border: "1px solid #374151",
+                      backgroundColor: "var(--color-popover)",
+                      border: "1px solid var(--color-border)",
                       borderRadius: "8px",
-                      color: "#f9fafb",
+                      color: "var(--color-popover-foreground)",
+                      fontWeight: 500,
                     }}
-                    formatter={(value: number) => [`$${value.toLocaleString()}`, ""]}
+                    itemStyle={{
+                      color: "var(--color-popover-foreground)",
+                      fontWeight: 500,
+                    }}
+                    formatter={(value: number, name: string, entry: any) => [
+                      `$${value.toLocaleString()}`,
+                      entry && entry.payload && entry.payload.name ? entry.payload.name : name,
+                    ]}
+                    labelStyle={{
+                      color: "var(--color-popover-foreground)",
+                      fontWeight: 500,
+                    }}
                   />
                 </PieChart>
               </ResponsiveContainer>

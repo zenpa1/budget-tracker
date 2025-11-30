@@ -40,12 +40,12 @@ export function SpendingChart() {
                 <YAxis stroke="#9ca3af" fontSize={12} tickFormatter={(value) => `$${value / 1000}k`} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "#1f2937",
-                    border: "1px solid #374151",
+                    backgroundColor: "var(--color-popover)",
+                    border: "1px solid var(--color-border)",
                     borderRadius: "8px",
-                    color: "#f9fafb",
+                    color: "var(--color-popover-foreground)",
                   }}
-                  formatter={(value: number) => [`$${value.toLocaleString()}`, ""]}
+                  formatter={(value: number, name: string) => [`$${value.toLocaleString()}`, name]}
                 />
                 <Legend />
                 <Area
