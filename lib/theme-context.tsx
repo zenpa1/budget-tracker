@@ -14,23 +14,26 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("dark")
+  // Initialize theme based on saved preference or system preference
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window === 'undefined') return 'dark'
+    const savedTheme = localStorage.getItem("budget-tracker-theme") as Theme | null
+    if (savedTheme) return savedTheme
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  })
   const [mounted, setMounted] = useState(false)
   const [fading, setFading] = useState(false)
   const lastToggleRef = useRef<number>(0)
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem("budget-tracker-theme") as Theme | null
-    if (savedTheme) {
-      setThemeState(savedTheme)
-      document.documentElement.classList.toggle("dark", savedTheme === "dark")
-    }
+    // Ensure the document class matches the initial theme
+    document.documentElement.classList.toggle("dark", theme === "dark")
     // Enable smooth transitions only after initial theme is applied to avoid first-load flash
     requestAnimationFrame(() => {
       document.documentElement.classList.add("theme-transition-enabled")
     })
     setMounted(true)
-  }, [])
+  }, [theme])
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme)
