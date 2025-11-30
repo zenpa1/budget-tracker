@@ -170,9 +170,16 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
       createdAt: new Date().toISOString(),
     };
 
+    // Optimistically update UI immediately
+    setBudgets((prev) => [...prev, newBudget]);
+
     const { error } = await supabase.from("budgets").insert(newBudget);
 
-    if (error) console.error("Failed to add budget:", error);
+    if (error) {
+      console.error("Failed to add budget:", error);
+      // Rollback on error
+      setBudgets((prev) => prev.filter((b) => b.id !== newBudget.id));
+    }
   }
 
   async function updateBudget(id: string, updates: Partial<Budget>) {
