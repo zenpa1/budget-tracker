@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -20,6 +20,20 @@ export function ReportGenerator() {
   const [reportReady, setReportReady] = useState(false)
 
   const exceededBudgets = budgets.filter((b) => b.status === "exceeded")
+
+  // Pre-select budget from query string if provided (e.g., /reports?budgetId=xyz)
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const params = new URLSearchParams(window.location.search)
+    const budgetIdParam = params.get("budgetId")
+    if (budgetIdParam && !selectedBudget) {
+      // Verify the budget exists before setting
+      const exists = budgets.some((b) => b.id === budgetIdParam)
+      if (exists) {
+        setSelectedBudget(budgetIdParam)
+      }
+    }
+  }, [budgets, selectedBudget])
 
   const handleGenerateReport = async () => {
     setGenerating(true)

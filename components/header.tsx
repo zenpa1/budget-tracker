@@ -49,14 +49,13 @@ export function Header({ title, description }: HeaderProps) {
         <button onClick={openMobile} className="md:hidden -ml-2 mr-3 p-1 rounded-md hover:bg-secondary" aria-label="Open menu">
           <Menu className="h-6 w-6" />
         </button>
-
         <div className="flex-1 min-w-0 pr-4">
-        <h1 title={title} className="text-lg sm:text-xl font-semibold text-foreground truncate">{title}</h1>
-        {description && (
-          <p title={description} className="text-sm text-muted-foreground truncate">
-            {description}
-          </p>
-        )}
+          <h1 title={title} className="text-lg sm:text-xl font-semibold text-foreground truncate">{title}</h1>
+          {description && (
+            <p title={description} className="text-sm text-muted-foreground truncate">
+              {description}
+            </p>
+          )}
         </div>
       </div>
 

@@ -52,6 +52,7 @@ interface BudgetContextType {
 
   markNotificationRead: (id: string) => Promise<void>;
   markAllNotificationsRead: () => Promise<void>;
+  markNotificationsRead: (ids: string[]) => Promise<void>;
 
   getUnreadNotificationsCount: () => number;
   getAnomaliesCount: () => number;
@@ -61,6 +62,8 @@ interface BudgetContextType {
   getTotalAllocated: () => number;
   getTotalSpent: () => number;
   getFeedbackByStatus: (status: FeedbackReport["status"]) => FeedbackReport[];
+  
+  reloadData: () => Promise<void>;
 }
 
 const BudgetContext = createContext<BudgetContextType | undefined>(undefined);
@@ -162,11 +165,11 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
   async function addBudget(
     input: Omit<Budget, "id" | "spentAmount" | "status" | "createdAt">
   ) {
-    const newBudget = {
+    const newBudget: Budget = {
       ...input,
       id: crypto.randomUUID(),
       spentAmount: 0,
-      status: "active",
+      status: "active" as const,
       createdAt: new Date().toISOString(),
     };
 
@@ -190,7 +193,20 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
   // EXPENSES
   // ---------------------------
   async function addExpense(e: Expense) {
-    await supabase.from("expenses").insert(e);
+    console.log("Attempting to insert expense:", e);
+    const { data, error } = await supabase.from("expenses").insert(e).select();
+    
+    if (error) {
+      console.error("Failed to add expense - Full error:", JSON.stringify(error, null, 2));
+      console.error("Error code:", error.code);
+      console.error("Error message:", error.message);
+      console.error("Error details:", error.details);
+      throw error;
+    }
+
+    console.log("Expense added successfully:", data);
+    // Note: Database trigger automatically updates budget.spentAmount and status
+    // Realtime subscription will propagate changes to UI
   }
 
   // ---------------------------
@@ -267,11 +283,50 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
   // NOTIFICATIONS
   // ---------------------------
   async function markNotificationRead(id: string) {
-    await supabase.from("notifications").update({ read: true }).eq("id", id);
+    // Optimistic UI update
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+    const { error } = await supabase
+      .from("notifications")
+      .update({ read: true })
+      .eq("id", id);
+    if (error) {
+      // Rollback if the update fails
+      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: false } : n)));
+      console.error("Failed to mark notification read:", error);
+    }
   }
 
   async function markAllNotificationsRead() {
-    await supabase.from("notifications").update({ read: true }).eq("read", false);
+    // Optimistic UI update for all unread
+    setNotifications((prev) => prev.map((n) => (n.read ? n : { ...n, read: true })));
+    const { error } = await supabase
+      .from("notifications")
+      .update({ read: true })
+      .eq("read", false);
+    if (error) {
+      // Rollback: restore original read flags
+      console.error("Failed to mark all notifications read:", error);
+      // Reload to restore server state
+      try { await loadAll() } catch {}
+    }
+  }
+
+  // Batch mark specific notifications as read (for role-filtered lists)
+  async function markNotificationsRead(ids: string[]) {
+    if (!ids || ids.length === 0) return;
+    // Optimistic UI update only for provided IDs
+    setNotifications((prev) => prev.map((n) => (ids.includes(n.id) ? { ...n, read: true } : n)));
+
+    const { error } = await supabase
+      .from("notifications")
+      .update({ read: true })
+      .in("id", ids);
+
+    if (error) {
+      console.error("Failed to mark selected notifications read:", error);
+      // Rollback only affected IDs
+      setNotifications((prev) => prev.map((n) => (ids.includes(n.id) ? { ...n, read: false } : n)));
+    }
   }
 
   // ---------------------------
@@ -325,6 +380,7 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
 
         markNotificationRead,
         markAllNotificationsRead,
+        markNotificationsRead,
 
         getUnreadNotificationsCount,
         getAnomaliesCount,
@@ -333,6 +389,8 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
         getTotalAllocated,
         getTotalSpent,
         getFeedbackByStatus,
+        
+        reloadData: loadAll,
       }}
     >
       {children}

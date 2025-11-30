@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
+import { createContext, useContext, useEffect, useState, useRef, type ReactNode } from "react"
 
 type Theme = "light" | "dark"
 
@@ -22,17 +22,27 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
   })
   const [mounted, setMounted] = useState(false)
+  const [fading, setFading] = useState(false)
+  const lastToggleRef = useRef<number>(0)
 
   useEffect(() => {
     // Ensure the document class matches the initial theme
     document.documentElement.classList.toggle("dark", theme === "dark")
     setMounted(true)
   }, [])
-
+wW
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme)
     localStorage.setItem("budget-tracker-theme", newTheme)
+    // Temporarily add a class to trigger transition (already enabled after mount)
     document.documentElement.classList.toggle("dark", newTheme === "dark")
+    // Trigger overlay fade animation only if not toggled very recently
+    const now = performance.now()
+    if (now - lastToggleRef.current > 800) {
+      setFading(true)
+      setTimeout(() => setFading(false), 240)
+    }
+    lastToggleRef.current = now
   }
 
   const toggleTheme = () => {
@@ -47,7 +57,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return null
   }
 
-  return <ThemeContext.Provider value={{ theme, toggleTheme, setTheme, logoSrc }}>{children}</ThemeContext.Provider>
+  return (
+    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme, logoSrc }}>
+      {children}
+      {fading && <div aria-hidden className="theme-fade-overlay" />}
+    </ThemeContext.Provider>
+  )
 }
 
 export function useTheme() {

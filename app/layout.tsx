@@ -4,9 +4,13 @@ import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Budget Tracker Dashboard",
+  title: "verity",
   description: "Company budget tracking and anomaly detection system for Finance Heads",
-    generator: 'v0.app'
+  icons: {
+    icon: "/branding/verity-favicon.ico",
+    apple: "/branding/verity-favicon.png",
+  },
+  generator: "v0.app"
 }
 
 export default function RootLayout({
@@ -23,6 +27,7 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Geist+Mono&family=Geist:ital,wght@0,400;0,700;1,400&display=swap"
           rel="stylesheet"
         />
+        {/* If custom branding icons are missing, Next will fall back to /favicon.ico automatically */}
       </head>
       <body className={`font-sans antialiased`}>
         {children}
