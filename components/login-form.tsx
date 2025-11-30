@@ -10,8 +10,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, AlertCircle } from "lucide-react"
+import { Loader2, AlertCircle, Moon, Sun } from "lucide-react"
 import { Logo } from "@/components/logo"
+import { useTheme } from "@/lib/theme-context"
 
 export function LoginForm() {
   const [email, setEmail] = useState("")
@@ -19,6 +20,7 @@ export function LoginForm() {
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const { login } = useAuth()
+  const { theme, toggleTheme } = useTheme()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,16 +39,40 @@ export function LoginForm() {
     setIsLoading(false)
   }
 
+  const heroImage = theme === "dark" ? "/images/login-hero-dark.jpg" : "/images/login-hero-light.jpg"
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex items-center justify-center">
-            <Logo height={40} width={120} />
+    <div className="flex min-h-screen bg-background">
+      {/* Left side - Hero Image (theme-aware) */}
+      <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 relative overflow-hidden">
+        <div
+          className="w-full h-full bg-cover bg-center transition-[background-image] duration-300"
+          style={{ backgroundImage: `url('${heroImage}')` }}
+          aria-hidden="true"
+        />
+      </div>
+
+      {/* Right side - Login Form */}
+      <div className="flex w-full lg:w-1/2 xl:w-2/5 items-center justify-center p-8 bg-background relative">
+        {/* Theme Toggle Button - Top Right */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleTheme}
+          className="absolute top-4 right-4"
+          aria-label="Toggle theme"
+        >
+          {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+        </Button>
+        <div className="w-full max-w-md">
+          <div className="mb-8 text-center">
+            <div className="mx-auto mb-6 flex items-center justify-center">
+              <Logo height={40} width={140} />
+            </div>
+            <h1 className="text-2xl font-bold text-foreground mb-2">Welcome back</h1>
+            <p className="text-muted-foreground">Sign in to access your dashboard</p>
           </div>
-          <CardDescription>Sign in to access the dashboard</CardDescription>
-        </CardHeader>
-        <CardContent>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <Alert variant="destructive">
@@ -93,7 +119,7 @@ export function LoginForm() {
             </Button>
           </form>
 
-          <div className="mt-6 rounded-lg border border-border bg-muted/50 p-4">
+          <div className="mt-8 rounded-lg border border-border bg-muted/50 p-4">
             <p className="mb-2 text-sm font-medium text-foreground">Demo Credentials</p>
             <div className="space-y-1 text-xs text-muted-foreground">
               <p>
@@ -107,8 +133,8 @@ export function LoginForm() {
               </p>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 }
