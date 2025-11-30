@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { useBudget } from "@/lib/budget-context"
+import { useAuth } from "@/lib/auth-context"
 import { supabase } from "@/lib/supabase" // <--- needed for direct DB updates
 import type { FeedbackReport } from "@/lib/types"
 import { Button } from "@/components/ui/button"
@@ -53,7 +54,9 @@ const categoryLabels: Record<FeedbackReport["category"], string> = {
 }
 
 export function FeedbackList() {
-  const { feedbackReports } = useBudget()
+  const { feedbackReports, reloadData } = useBudget()
+  const { user } = useAuth()
+  const isHR = user?.role === "hr_admin"
   const [selectedReport, setSelectedReport] = useState<FeedbackReport | null>(null)
 
   // Editable fields (local state)
@@ -124,14 +127,16 @@ export function FeedbackList() {
 
     try {
       const updates: any = {
-        subject,
-        description,
-        category,
-        department,
-        incidentDate: incidentDate ?? null,
-        involvedParties: involvedParties ?? null,
+        // Reporter fields should not be changed by HR; keep original if HR
+        subject: isHR ? selectedReport.subject : subject,
+        description: isHR ? selectedReport.description : description,
+        category: isHR ? selectedReport.category : category,
+        department: isHR ? selectedReport.department : department,
+        incidentDate: isHR ? selectedReport.incidentDate ?? null : incidentDate ?? null,
+        involvedParties: isHR ? selectedReport.involvedParties ?? null : involvedParties ?? null,
+        // HR action fields remain editable
         severity,
-        isAnonymous,
+        isAnonymous: isHR ? selectedReport.isAnonymous : isAnonymous,
         assignedTo: assignedTo ?? null,
         hrNotes,
         status: newStatus,
@@ -153,6 +158,8 @@ export function FeedbackList() {
       }
     } finally {
       setLoading(false)
+      // Refresh data to reflect changes in the main list
+      try { await reloadData() } catch {}
       // Close modal
       setSelectedReport(null)
     }
@@ -272,8 +279,8 @@ export function FeedbackList() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="rounded-lg bg-muted/50 p-3">
                     <p className="text-sm text-muted-foreground">Category</p>
-                    <Select value={category} onValueChange={(v) => setCategory(v as FeedbackReport["category"])}>
-                      <SelectTrigger>
+                    <Select value={category} onValueChange={(v) => setCategory(v as FeedbackReport["category"])} disabled={isHR}>
+                      <SelectTrigger disabled={isHR}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -293,6 +300,7 @@ export function FeedbackList() {
                       className="mt-1 w-full rounded-md border px-2 py-1"
                       value={department}
                       onChange={(e) => setDepartment(e.target.value)}
+                      readOnly={isHR}
                     />
                   </div>
 
@@ -304,6 +312,8 @@ export function FeedbackList() {
                         className="mt-1 w-full rounded-md border px-2 py-1"
                         value={incidentDate ?? ""}
                         onChange={(e) => setIncidentDate(e.target.value || null)}
+                        readOnly={isHR}
+                        disabled={isHR}
                       />
                     </div>
                   )}
@@ -314,6 +324,7 @@ export function FeedbackList() {
                       className="mt-1 w-full rounded-md border px-2 py-1"
                       value={involvedParties ?? ""}
                       onChange={(e) => setInvolvedParties(e.target.value || null)}
+                      readOnly={isHR}
                     />
                   </div>
                 </div>
@@ -324,6 +335,7 @@ export function FeedbackList() {
                     <Textarea
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
+                      readOnly={isHR}
                       rows={6}
                     />
                   </div>
@@ -364,6 +376,7 @@ export function FeedbackList() {
                       type="checkbox"
                       checked={isAnonymous}
                       onChange={(e) => setIsAnonymous(e.target.checked)}
+                      disabled={isHR}
                     />
                   </div>
 

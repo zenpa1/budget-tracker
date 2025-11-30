@@ -4,9 +4,10 @@ import { Sidebar } from "@/components/sidebar"
 import { Header } from "@/components/header"
 import { BudgetForm } from "@/components/budget-form"
 import { BudgetTable } from "@/components/budget-table"
+import { ExpenseForm } from "@/components/expense-form"
 import { BudgetProvider } from "@/lib/budget-context"
 import { ThemeProvider } from "@/lib/theme-context"
-import { AuthProvider } from "@/lib/auth-context"
+import { AuthProvider, useAuth } from "@/lib/auth-context"
 import { AuthGuard } from "@/components/auth-guard"
 
 export default function BudgetsPage() {
@@ -15,25 +16,38 @@ export default function BudgetsPage() {
       <AuthProvider>
         <AuthGuard>
           <BudgetProvider>
-            <div className="min-h-screen bg-background">
-              <Sidebar />
-              <main className="md:pl-64">
-                <Header title="Budget Management" description="Create and manage event budgets" />
-                <div className="p-6">
-                  <div className="mb-6 flex items-center justify-between">
-                    <div>
-                      <h2 className="text-lg font-semibold text-foreground">All Budgets</h2>
-                      <p className="text-sm text-muted-foreground">Track and manage all company event budgets</p>
-                    </div>
-                    <BudgetForm />
-                  </div>
-                  <BudgetTable />
-                </div>
-              </main>
-            </div>
+            <BudgetsPageContent />
           </BudgetProvider>
         </AuthGuard>
       </AuthProvider>
     </ThemeProvider>
+  )
+}
+
+function BudgetsPageContent() {
+  const { user } = useAuth()
+  const isFinance = user?.role === "finance_head"
+  return (
+    <div className="min-h-screen bg-background">
+      <Sidebar />
+      <main className="md:pl-64">
+        <Header title="Budget Management" description="Create and manage event budgets" />
+        <div className="p-6">
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">All Budgets</h2>
+              <p className="text-sm text-muted-foreground">Track and manage all company event budgets</p>
+            </div>
+            {isFinance && (
+              <div className="flex gap-2">
+                <ExpenseForm />
+                <BudgetForm />
+              </div>
+            )}
+          </div>
+          <BudgetTable />
+        </div>
+      </main>
+    </div>
   )
 }

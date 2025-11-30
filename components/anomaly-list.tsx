@@ -162,7 +162,7 @@ export function AnomalyList() {
                               </Button>
                             </>
                           )}
-                          <Link href={`/reports?anomaly=${anomaly.id}`}>
+                          <Link href={`/reports?budgetId=${anomaly.budgetId}`}>
                             <Button variant="outline" size="sm">
                               Generate Report
                             </Button>
