@@ -55,14 +55,19 @@ export function StatsCards() {
             <stat.icon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold text-foreground">
-                {loading ? <Skeleton className="inline-block h-6 w-24" /> : stat.value}
+            <div className="space-y-2">
+              <div className="text-2xl font-bold leading-tight text-foreground">
+                {loading ? <Skeleton className="inline-block h-7 w-28" /> : stat.value}
               </div>
               {loading ? (
-                <Skeleton className={`inline-block h-4 w-32 ${stat.trend === "up" ? "" : ""}`} />
+                <Skeleton className="h-4 w-32" />
               ) : (
-                <p className={`text-xs ${stat.trend === "up" ? "text-success" : "text-destructive"}`}>{stat.change}</p>
+                <p
+                  className={`text-xs truncate max-w-[90%] ${stat.trend === "up" ? "text-success" : "text-destructive"}`}
+                  title={stat.change}
+                >
+                  {stat.change}
+                </p>
               )}
             </div>
           </CardContent>

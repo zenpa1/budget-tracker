@@ -3,12 +3,28 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useBudget } from "@/lib/budget-context"
+import { useAuth } from "@/lib/auth-context"
 import { Bell, AlertTriangle, AlertCircle, Info, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
 
 export function NotificationList() {
-  const { notifications, markNotificationRead, markAllNotificationsRead, loading } = useBudget()
+  const { notifications, markNotificationRead, markNotificationsRead, loading } = useBudget()
+  const { user } = useAuth()
+
+  // Role-based filtering:
+  // - Finance sees budget-related (notifications with budgetId)
+  // - HR sees HR-related (notifications without budgetId)
+  // - Others (employees) see only info-type general messages without budgetId
+  const role = user?.role
+  const filtered = notifications.filter((n) => {
+    if (role === "finance_head") return Boolean(n.budgetId)
+    if (role === "hr_admin") return !n.budgetId
+    // Employees: only general info without budget and not feedback-related
+    const isGeneralInfo = !n.budgetId && n.type === "info"
+    const mentionsFeedback = (n.message || "").toLowerCase().includes("feedback")
+    return isGeneralInfo && !mentionsFeedback
+  })
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -35,7 +51,12 @@ export function NotificationList() {
     return "Just now"
   }
 
-  const unreadCount = notifications.filter((n) => !n.read).length
+  const unreadCount = filtered.filter((n) => !n.read).length
+
+  const markAllVisibleRead = async () => {
+    const ids = filtered.filter((n) => !n.read).map((n) => n.id)
+    if (ids.length > 0) await markNotificationsRead(ids)
+  }
 
   return (
     <Card className="bg-card">
@@ -47,7 +68,7 @@ export function NotificationList() {
           </CardDescription>
         </div>
         {!loading && unreadCount > 0 && (
-          <Button variant="outline" size="sm" onClick={markAllNotificationsRead}>
+          <Button variant="outline" size="sm" onClick={markAllVisibleRead}>
             <Check className="mr-2 h-4 w-4" />
             Mark all read
           </Button>
@@ -60,7 +81,7 @@ export function NotificationList() {
           </div>
         ) : (
           <div className="space-y-3">
-            {notifications.map((notification) => (
+            {filtered.map((notification) => (
               <div
                 key={notification.id}
                 className={cn(

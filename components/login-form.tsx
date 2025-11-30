@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
@@ -18,6 +18,8 @@ export function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
+  const emailRef = useRef<HTMLInputElement | null>(null)
+  const passwordRef = useRef<HTMLInputElement | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const { login } = useAuth()
   const { theme, toggleTheme } = useTheme()
@@ -33,7 +35,14 @@ export function LoginForm() {
     if (result.success) {
       router.push("/")
     } else {
-      setError(result.error || "Login failed")
+      const message = result.error?.trim() || "Invalid email or password"
+      setError(message)
+      // Focus first field to guide correction
+      if (!email) {
+        emailRef.current?.focus()
+      } else {
+        passwordRef.current?.focus()
+      }
     }
 
     setIsLoading(false)
@@ -73,13 +82,15 @@ export function LoginForm() {
             <p className="text-muted-foreground">Sign in to access your dashboard</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+            <div aria-live="assertive">
+              {error && (
+                <Alert variant="destructive" role="alert">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+            </div>
 
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -91,6 +102,7 @@ export function LoginForm() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isLoading}
+                ref={emailRef}
               />
             </div>
 
@@ -104,6 +116,7 @@ export function LoginForm() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={isLoading}
+                ref={passwordRef}
               />
             </div>
 
