@@ -11,8 +11,14 @@ import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
 
 export function AnomalyList() {
-  const { anomalies, updateAnomalyStatus, loading } = useBudget()
+  const { anomalies, updateAnomalyStatus, loading, reloadData } = useBudget()
   const { user } = useAuth()
+
+  const handleStatusUpdate = async (id: string, status: string) => {
+    await updateAnomalyStatus(id, status)
+    // Reload data to reflect changes immediately
+    try { await reloadData() } catch {}
+  }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -136,15 +142,15 @@ export function AnomalyList() {
                         <div className="flex flex-wrap gap-2">
                           {anomaly.status === "pending" && (
                             <>
-                              <Button variant="outline" size="sm" onClick={() => updateAnomalyStatus(anomaly.id, "reviewed")}>
+                              <Button variant="outline" size="sm" onClick={() => handleStatusUpdate(anomaly.id, "reviewed")}>
                                 <FileText className="mr-2 h-4 w-4" />
                                 Mark as Reviewed
                               </Button>
-                              <Button variant="default" size="sm" onClick={() => updateAnomalyStatus(anomaly.id, "approved")}>
+                              <Button variant="default" size="sm" onClick={() => handleStatusUpdate(anomaly.id, "approved")}>
                                 <CheckCircle className="mr-2 h-4 w-4" />
                                 Approve
                               </Button>
-                              <Button variant="destructive" size="sm" onClick={() => updateAnomalyStatus(anomaly.id, "rejected")}>
+                              <Button variant="destructive" size="sm" onClick={() => handleStatusUpdate(anomaly.id, "rejected")}>
                                 <XCircle className="mr-2 h-4 w-4" />
                                 Reject
                               </Button>
@@ -152,11 +158,11 @@ export function AnomalyList() {
                           )}
                           {anomaly.status === "reviewed" && (
                             <>
-                              <Button variant="default" size="sm" onClick={() => updateAnomalyStatus(anomaly.id, "approved")}>
+                              <Button variant="default" size="sm" onClick={() => handleStatusUpdate(anomaly.id, "approved")}>
                                 <CheckCircle className="mr-2 h-4 w-4" />
                                 Approve
                               </Button>
-                              <Button variant="destructive" size="sm" onClick={() => updateAnomalyStatus(anomaly.id, "rejected")}>
+                              <Button variant="destructive" size="sm" onClick={() => handleStatusUpdate(anomaly.id, "rejected")}>
                                 <XCircle className="mr-2 h-4 w-4" />
                                 Reject
                               </Button>
