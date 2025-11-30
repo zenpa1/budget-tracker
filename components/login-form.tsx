@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, DollarSign, AlertCircle } from "lucide-react"
+import { Loader2, AlertCircle } from "lucide-react"
+import { Logo } from "@/components/logo"
 
 export function LoginForm() {
   const [email, setEmail] = useState("")
@@ -40,10 +41,9 @@ export function LoginForm() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary">
-            <DollarSign className="h-8 w-8 text-primary-foreground" />
+          <div className="mx-auto mb-4 flex items-center justify-center">
+            <Logo height={40} width={120} />
           </div>
-          <CardTitle className="text-2xl font-bold">Budget Tracker</CardTitle>
           <CardDescription>Sign in to access the dashboard</CardDescription>
         </CardHeader>
         <CardContent>
