@@ -16,7 +16,7 @@ export default function NotificationsPage() {
           <BudgetProvider>
             <div className="min-h-screen bg-background">
               <Sidebar />
-              <main className="pl-64">
+              <main className="md:pl-64">
                 <Header title="Notifications" description="View all system alerts and updates" />
                 <div className="p-6">
                   <NotificationList />

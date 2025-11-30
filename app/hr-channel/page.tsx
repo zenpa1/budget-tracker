@@ -20,9 +20,9 @@ function HRChannelContent() {
   const isHRAdmin = user?.role === "hr_admin"
 
   return (
-    <div className="min-h-screen bg-background">
-      <Sidebar />
-      <main className="pl-64">
+      <div className="min-h-screen bg-background">
+        <Sidebar />
+        <main className="md:pl-64">
         <Header
           title="Anonymous Feedback Channel"
           description="Confidentially report workplace concerns directly to HR"
@@ -73,7 +73,7 @@ function HRChannelContent() {
           </Card>
 
           <Tabs defaultValue="submit" className="space-y-6">
-            <TabsList className={`grid w-full max-w-md ${isHRAdmin ? "grid-cols-3" : "grid-cols-2"}`}>
+            <TabsList className={`grid w-full max-w-full sm:max-w-md ${isHRAdmin ? "grid-cols-3" : "grid-cols-2"}`}>
               <TabsTrigger value="submit">Submit Report</TabsTrigger>
               <TabsTrigger value="check">Check Status</TabsTrigger>
               {isHRAdmin && <TabsTrigger value="manage">HR Dashboard</TabsTrigger>}

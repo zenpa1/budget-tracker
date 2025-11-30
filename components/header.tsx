@@ -1,6 +1,6 @@
 "use client"
 
-import { Bell, Search, Sun, Moon, LogOut } from "lucide-react"
+import { Bell, Search, Sun, Moon, LogOut, Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useBudget } from "@/lib/budget-context"
@@ -16,6 +16,9 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import Link from "next/link"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
+import { MobileSidebar } from "@/components/mobile-sidebar"
+import { useState } from "react"
 
 interface HeaderProps {
   title: string
@@ -23,7 +26,10 @@ interface HeaderProps {
 }
 
 export function Header({ title, description }: HeaderProps) {
-  const { getUnreadNotificationsCount } = useBudget()
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const openMobile = () => setMobileOpen(true)
+  const closeMobile = () => setMobileOpen(false)
+  const { getUnreadNotificationsCount, loading } = useBudget()
   const { theme, toggleTheme } = useTheme()
   const { user, logout } = useAuth()
   const unreadCount = getUnreadNotificationsCount()
@@ -37,10 +43,21 @@ export function Header({ title, description }: HeaderProps) {
   }
 
   return (
+    <>
     <header className="flex h-16 items-center justify-between border-b border-border bg-card px-6">
-      <div>
-        <h1 className="text-xl font-semibold text-foreground">{title}</h1>
-        {description && <p className="text-sm text-muted-foreground">{description}</p>}
+      <div className="flex items-center gap-3">
+        <button onClick={openMobile} className="md:hidden -ml-2 mr-3 p-1 rounded-md hover:bg-secondary" aria-label="Open menu">
+          <Menu className="h-6 w-6" />
+        </button>
+
+        <div className="flex-1 min-w-0 pr-4">
+        <h1 title={title} className="text-lg sm:text-xl font-semibold text-foreground truncate">{title}</h1>
+        {description && (
+          <p title={description} className="text-sm text-muted-foreground truncate">
+            {description}
+          </p>
+        )}
+        </div>
       </div>
 
       <div className="flex items-center gap-3">
@@ -60,8 +77,8 @@ export function Header({ title, description }: HeaderProps) {
 
         <Link href="/notifications">
           <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            {unreadCount > 0 && (
+            {loading ? <LoadingSpinner className="text-foreground" size={18} /> : <Bell className="h-5 w-5" />}
+            {unreadCount > 0 && !loading && (
               <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs text-destructive-foreground">
                 {unreadCount}
               </span>
@@ -100,5 +117,7 @@ export function Header({ title, description }: HeaderProps) {
         )}
       </div>
     </header>
+    <MobileSidebar open={mobileOpen} onClose={closeMobile} />
+    </>
   )
 }

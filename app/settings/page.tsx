@@ -22,7 +22,7 @@ function SettingsContent() {
     <BudgetProvider>
       <div className="min-h-screen bg-background">
         <Sidebar />
-        <main className="pl-64">
+        <main className="md:pl-64">
           <Header title="Settings" description="Configure your budget tracker preferences" />
           <div className="p-6">
             <div className="grid gap-6 lg:grid-cols-2">

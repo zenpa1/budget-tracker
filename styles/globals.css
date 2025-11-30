@@ -123,3 +123,29 @@
     @apply bg-background text-foreground;
   }
 }
+
+/*
+  Hide Next.js / Turbopack floating devtools badge and panel during local dev.
+  This is intentionally broad to cover the various IDs/classes/data-attrs
+  the dev overlay may use across Next.js versions. It only applies in
+  development and is non-destructive (display:none + pointer-events:none).
+*/
+#__next_dev_tools,
+#__next_devtools,
+#__next_dev_overlay,
+.next-devtools,
+.next-route-inspector,
+[data-nextjs-route-inspector],
+[data-next-route-inspector],
+[aria-label="Next.js DevTools"],
+[aria-label="Next.js Devtools"],
+[aria-label="Next.js"],
+.turbo-devtools,
+.turbo-overlay,
+.route-inspector,
+.nextjs-route-inspector {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+

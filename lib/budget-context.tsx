@@ -15,6 +15,7 @@ interface BudgetContextType {
   expenses: Expense[];
   anomalies: Anomaly[];
   notifications: Notification[];
+  loading: boolean;
   feedbackReports: FeedbackReport[];
   addBudget: (b: Budget) => Promise<void>;
   addExpense: (e: Expense) => Promise<void>;
@@ -41,6 +42,7 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
   const [anomalies, setAnomalies] = useState<Anomaly[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [feedbackReports, setFeedbackReports] = useState<FeedbackReport[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   // INITIAL LOAD
   useEffect(() => {
@@ -48,17 +50,24 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function loadAllData() {
-    const { data: b } = await supabase.from("budgets").select("*");
-    const { data: e } = await supabase.from("expenses").select("*");
-    const { data: a } = await supabase.from("anomalies").select("*");
-    const { data: n } = await supabase.from("notifications").select("*");
-    const { data: f } = await supabase.from("feedbackReports").select("*"); // ⭐ FIXED table name
+    try {
+      setLoading(true);
+      const { data: b } = await supabase.from("budgets").select("*");
+      const { data: e } = await supabase.from("expenses").select("*");
+      const { data: a } = await supabase.from("anomalies").select("*");
+      const { data: n } = await supabase.from("notifications").select("*");
+      const { data: f } = await supabase.from("feedbackReports").select("*"); // ⭐ FIXED table name
 
-    setBudgets(b || []);
-    setExpenses(e || []);
-    setAnomalies(a || []);
-    setNotifications(n || []);
-    setFeedbackReports(f || []);
+      setBudgets(b || []);
+      setExpenses(e || []);
+      setAnomalies(a || []);
+      setNotifications(n || []);
+      setFeedbackReports(f || []);
+    } catch (err) {
+      console.error('Failed to load initial data', err);
+    } finally {
+      setLoading(false);
+    }
   }
 
   // REAL-TIME SUBSCRIPTIONS
@@ -238,6 +247,7 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
         expenses,
         anomalies,
         notifications,
+        loading,
         feedbackReports,
         addBudget,
         addExpense,

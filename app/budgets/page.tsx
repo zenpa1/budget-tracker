@@ -17,7 +17,7 @@ export default function BudgetsPage() {
           <BudgetProvider>
             <div className="min-h-screen bg-background">
               <Sidebar />
-              <main className="pl-64">
+              <main className="md:pl-64">
                 <Header title="Budget Management" description="Create and manage event budgets" />
                 <div className="p-6">
                   <div className="mb-6 flex items-center justify-between">
